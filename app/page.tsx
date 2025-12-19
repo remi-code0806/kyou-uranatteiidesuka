@@ -118,20 +118,32 @@ export default function Home() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f6e9f2" }}>
-      {/* 背景画像ゾーン（切れにくい） */}
-      <div
+     <div style={{ minHeight: "100vh", backgroundColor: "#f6e9f2" }}>
+    {/* ヘッダー動画ゾーン */}
+    <div
+      style={{
+        position: "relative",
+        height: 260,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        overflow: "hidden",
+      }}
+    >
+      <video
+        src="/videos/header.mp4"
+        poster="/bg.png"
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
         style={{
-          height: 260,
-          backgroundImage: "url('/bg.png')",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "contain",
-    backgroundPosition: "center 35%",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    overflow: "hidden",
-  }}
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
       />
+    </div>
 
       {/* 中身UI */}
       <main
