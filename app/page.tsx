@@ -120,32 +120,93 @@ export default function Home() {
   return (
      <div style={{ minHeight: "100vh", backgroundColor: "#f6e9f2" }}>
     {/* ヘッダー動画ゾーン */}
+<div
+  style={{
+    position: "relative",
+    height: 260,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: "hidden",
+    zIndex: 0,
+  }}
+>
+  <video
+    src="/videos/header.mp4"
+    poster="/bg.png"
+    autoPlay
+    muted
+    playsInline
+    preload="auto"
+    style={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "contain",
+      display: "block",
+      zIndex: 0,
+      pointerEvents: "none",
+    }}
+  />
+
+  {/* 文字の読みやすさ用：薄い暗幕 */}
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      background:
+        "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.10))",
+      zIndex: 1,
+      pointerEvents: "none",
+    }}
+  />
+
+  {/* テキストオーバーレイ */}
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      zIndex: 2,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      padding: "18px 16px",
+      textAlign: "center",
+      pointerEvents: "none",
+      gap: 6,
+    }}
+  >
     <div
       style={{
-        position: "relative",
-        height: 260,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        overflow: "hidden",
+        color: "white",
+        fontSize: 16,
+        fontWeight: 800,
+        letterSpacing: "0.02em",
+        fontFamily:
+          '"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",sans-serif',
+        textShadow: "0 2px 10px rgba(0,0,0,0.35)",
       }}
     >
-      <video
-        src="/videos/header.mp4"
-        poster="/bg.png"
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          display: "block",
-          zIndex: 0,
-          pointerEvents: "none"
-        }}
-      />
+      疲れた心をふんわり癒す一言おみくじ占い
     </div>
+
+    <div
+      style={{
+        color: "white",
+        fontSize: 14,
+        fontWeight: 800,
+        letterSpacing: "0.04em",
+        fontFamily:
+          '"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",sans-serif',
+        textShadow: "0 2px 10px rgba(0,0,0,0.35)",
+      }}
+    >
+      {sign ?? ""} / {todayKey()}
+    </div>
+  </div>
+</div>
+
 
       {/* 中身UI */}
       <main
@@ -158,12 +219,7 @@ export default function Home() {
           lineHeight: 1.6,
         }}
       >
-        <header style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>今日占っていいですか？</div>
-          <div style={{ opacity: 0.75, marginTop: 4 }}>
-            疲れた心をふんわり癒す一言おみくじ占い
-          </div>
-        </header>
+        
 
         {view === "pick" && (
           <section>
