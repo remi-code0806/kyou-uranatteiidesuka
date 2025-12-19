@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-type Sign =
+type Zodiac =
   | "牡羊座"
   | "牡牛座"
   | "双子座"
@@ -16,7 +16,7 @@ type Sign =
   | "水瓶座"
   | "魚座";
 
-const SIGNS: Sign[] = [
+const ZODIACS: Zodiac[] = [
   "牡羊座",
   "牡牛座",
   "双子座",
@@ -31,306 +31,356 @@ const SIGNS: Sign[] = [
   "魚座",
 ];
 
-const LS_KEY_SIGN = "kyo-uranatte:sign";
-const LS_KEY_LAST_DATE = "kyo-uranatte:lastDate";
-const LS_KEY_LAST_MESSAGE = "kyo-uranatte:lastMessage";
-
-function todayKey(): string {
-  const d = new Date();
+function formatYmd(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
-export default function Home() {
-  const [sign, setSign] = useState<Sign | null>(null);
-  const [view, setView] = useState<"pick" | "result">("pick");
-  const [message, setMessage] = useState("");
-  const [alreadyDrawn, setAlreadyDrawn] = useState(false);
+// 例：適当にメッセージを返す（あなたのロジックがあるならここを差し替え）
+function getFortuneMessage(zodiac: Zodiac) {
+  const pool = [
+    "決めるなら、あとで納得できる選択を。急がなくてOK。",
+    "今日は小さな整頓が運を呼ぶ。5分だけ片付けると良い。",
+    "遠慮せず一言だけ伝えると、流れがよくなる日。",
+    "期待値を下げると、むしろ気持ちが軽くなる。",
+    "寄り道がヒントになる。いつもと違う道を選ぶのもあり。",
+  ];
+  // zodiacで少し変化させたいならここ
+  const idx = (zodiac.charCodeAt(0) + zodiac.length) % pool.length;
+  return pool[idx];
+}
 
-  const templates = useMemo(
-    () => [
-      "今日は調子がいい日。周りの人の助けをひとつだけ。",
-      "忙しい日ほど一息が大事。少し立ち止まって整えよう。",
-      "落ち着いて進みたい一日。順番を大切にしてみて。",
-      "決めるなら、あとで納得できる選択を。急がなくてOK。",
-      "うれしいことがあったら感謝をひとつ。気分が整うよ。",
-      "頑張りすぎなくて大丈夫。いつも通りで十分。",
-      "人の話を丁寧に聞くと◎。誤解を減らせそう。",
-      "小さな達成で合格。ひとつ終えられたらOK。",
-    ],
-    []
-  );
+const STORAGE_KEY = "kyou-uranatte:daily";
 
+export default function Page() {
+  const today = useMemo(() => formatYmd(new Date()), []);
+  const [zodiac, setZodiac] = useState<Zodiac>("水瓶座");
+  const [result, setResult] = useState<string>("");
+  const [hasDrawn, setHasDrawn] = useState<boolean>(false);
+
+  // 初期復元：今日の結果があれば復元
   useEffect(() => {
-    const savedSign = (localStorage.getItem(LS_KEY_SIGN) as Sign | null) ?? null;
-    const last = localStorage.getItem(LS_KEY_LAST_DATE);
-    const lastMsg = localStorage.getItem(LS_KEY_LAST_MESSAGE) || "";
-
-    if (savedSign) {
-      setSign(savedSign);
-      setView("result");
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        date: string;
+        zodiac: Zodiac;
+        result: string;
+      };
+      if (parsed?.date === today && parsed?.result) {
+        setZodiac(parsed.zodiac);
+        setResult(parsed.result);
+        setHasDrawn(true);
+      }
+    } catch {
+      // noop
     }
-    if (last === todayKey() && lastMsg) {
-      setAlreadyDrawn(true);
-      setMessage(lastMsg);
+  }, [today]);
+
+  const draw = () => {
+    if (hasDrawn) return;
+    const msg = getFortuneMessage(zodiac);
+    setResult(msg);
+    setHasDrawn(true);
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ date: today, zodiac, result: msg })
+      );
+    } catch {
+      // noop
     }
-  }, []);
+  };
 
-  function handleSelectSign(s: Sign) {
-    setSign(s);
-    localStorage.setItem(LS_KEY_SIGN, s);
-    setView("result");
-  }
-
-  function drawOmikuji() {
-    if (!sign) return;
-
-    const today = todayKey();
-    if (localStorage.getItem(LS_KEY_LAST_DATE) === today) {
-      setAlreadyDrawn(true);
-      return;
+  const copy = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result);
+      // 必要ならトースト等
+    } catch {
+      // clipboardが使えない環境向けフォールバック
+      const ta = document.createElement("textarea");
+      ta.value = result;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
     }
+  };
 
-    const msg = templates[Math.floor(Math.random() * templates.length)];
-    localStorage.setItem(LS_KEY_LAST_DATE, today);
-    localStorage.setItem(LS_KEY_LAST_MESSAGE, msg);
-
-    setMessage(msg);
-    setAlreadyDrawn(true);
-  }
-
-  async function copyText() {
-    const txt = `今日占っていいですか？\n${sign ?? ""}\n${message}`;
-    await navigator.clipboard.writeText(txt);
-    alert("コピーしました");
-  }
-
-  function resetSign() {
-    localStorage.removeItem(LS_KEY_SIGN);
-    localStorage.removeItem(LS_KEY_LAST_DATE);
-    localStorage.removeItem(LS_KEY_LAST_MESSAGE);
-    setSign(null);
-    setMessage("");
-    setAlreadyDrawn(false);
-    setView("pick");
-  }
+  const changeZodiac = () => {
+    // 例：次の星座に回す（UIは好きに差し替えてOK）
+    const idx = ZODIACS.indexOf(zodiac);
+    const next = ZODIACS[(idx + 1) % ZODIACS.length];
+    // 今日すでに引いている場合、星座変更をロックしたいならここでreturn
+    // if (hasDrawn) return;
+    setZodiac(next);
+  };
 
   return (
-     <div style={{ minHeight: "100vh", backgroundColor: "#f6e9f2" }}>
-    {/* ヘッダー動画ゾーン */}
-<div
-  style={{
-    position: "relative",
-    height: 260,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    overflow: "hidden",
-    zIndex: 0,
-  }}
->
-  <video
-    src="/videos/header.mp4"
-    poster="/bg.png"
-    autoPlay
-    muted
-    playsInline
-    preload="auto"
-    style={{
-      position: "absolute",
-      inset: 0,
-      width: "100%",
-      height: "100%",
-      objectFit: "contain",
-      display: "block",
-      zIndex: 0,
-      pointerEvents: "none",
-    }}
-  />
+    <main style={styles.page}>
+      {/* ===== HERO ===== */}
+      <section style={styles.hero}>
+        {/* 背景動画 */}
+        <video
+          src="/videos/header.mp4"
+          poster="/bg.png"
+          autoPlay
+          muted
+          playsInline
+          loop
+          preload="auto"
+          style={styles.heroVideo}
+        />
 
-  {/* 文字の読みやすさ用：薄い暗幕 */}
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      background:
-        "linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.10))",
-      zIndex: 1,
-      pointerEvents: "none",
-    }}
-  />
+        {/* 暗すぎ問題：ここを薄くしてある */}
+        <div style={styles.heroGradient} />
 
-  {/* テキストオーバーレイ */}
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      zIndex: 2,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "flex-end",
-      alignItems: "center",
-      padding: "18px 16px",
-      textAlign: "center",
-      pointerEvents: "none",
-      gap: 6,
-    }}
-  >
-    <div
-      style={{
-        color: "white",
-        fontSize: 16,
-        fontWeight: 800,
-        letterSpacing: "0.02em",
-        fontFamily:
-          '"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",sans-serif',
-        textShadow: "0 2px 10px rgba(0,0,0,0.35)",
-      }}
-    >
-      疲れた心をふんわり癒す一言おみくじ占い
-    </div>
+        {/* 中央タイトル */}
+        <div style={styles.heroTitleWrap}>
+          <h1 style={styles.heroTitle}>今日、占っていいですか？</h1>
+        </div>
 
-    <div
-      style={{
-        color: "white",
-        fontSize: 14,
-        fontWeight: 800,
-        letterSpacing: "0.04em",
-        fontFamily:
-          '"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",sans-serif',
-        textShadow: "0 2px 10px rgba(0,0,0,0.35)",
-      }}
-    >
-      {sign ?? ""} / {todayKey()}
-    </div>
-  </div>
-</div>
+        {/* 星座行：中央固定（左右にズレない） */}
+        <div style={styles.heroRowWrap}>
+          <div style={styles.heroRow}>
+            {/* 左：中央固定のためのダミー */}
+            <div style={{ width: 120 }} />
 
-
-      {/* 中身UI */}
-      <main
-        style={{
-          position: "relative", 
-          zIndex: 1,  
-          maxWidth: 520,
-          margin: "-120px auto 0",
-          padding: 20,
-          lineHeight: 1.6,
-        }}
-      >
-        
-
-        {view === "pick" && (
-          <section>
-            <h2 style={{ fontSize: 16, marginBottom: 10 }}>星座を選んでね</h2>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {SIGNS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleSelectSign(s)}
-                  style={{
-                    padding: "10px 8px",
-                    borderRadius: 12,
-                    border: "1px solid #ddd",
-                    background: "white",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+            {/* 中央：星座/日付 */}
+            <div style={styles.centerLine}>
+              <span style={styles.centerLineText}>
+                {zodiac} / {today}
+              </span>
             </div>
-          </section>
-        )}
 
-        {view === "result" && (
-          <section>
-            <div
+            {/* 右：星座変更 */}
+            <button type="button" onClick={changeZodiac} style={styles.changeBtn}>
+              星座を変更
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== RESULT CARD（ヘッダーの外に出す） ===== */}
+      <section style={styles.resultSection}>
+        <div style={styles.container}>
+          <div style={styles.card}>
+            <div style={styles.cardLabel}>疲れた心をふんわり癒す一言おみくじ占い</div>
+            <div style={styles.cardText}>{result || "まずは「引く」を押してください。"}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== ACTIONS ===== */}
+      <section style={styles.actionsSection}>
+        <div style={styles.container}>
+          <div style={styles.actionsRow}>
+            <button
+              type="button"
+              onClick={draw}
+              disabled={hasDrawn}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 10,
-                gap: 12,
+                ...styles.drawBtn,
+                ...(hasDrawn ? styles.drawBtnDisabled : null),
               }}
             >
-              <div style={{ opacity: 0.85 }}>
-                {sign} / {todayKey()}
-              </div>
-              <button
-                onClick={resetSign}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  textDecoration: "underline",
-                }}
-              >
-                星座を変更
-              </button>
-            </div>
+              {hasDrawn ? "今日はもう引きました" : "今日の一言を引く"}
+            </button>
 
-            <div
+            <button
+              type="button"
+              onClick={copy}
+              disabled={!result}
               style={{
-                marginTop: 12,
-                padding: 16,
-                borderRadius: 16,
-                border: "1px solid #e5e5e5",
-                background: "rgba(255,255,255,0.92)",
-                boxShadow: "0 10px 28px rgba(0,0,0,0.10)",
-                minHeight: 90,
-                display: "flex",
-                alignItems: "center",
-                fontSize: 18,
-                fontWeight: 600,
+                ...styles.copyBtn,
+                ...(!result ? styles.copyBtnDisabled : null),
               }}
             >
-              {message || "今日の一言を引いてみよう。"}
-            </div>
+              コピー
+            </button>
+          </div>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-              <button
-                onClick={drawOmikuji}
-                disabled={alreadyDrawn}
-                style={{
-                  flex: 1,
-                  padding: "12px 14px",
-                  borderRadius: 20,
-                  border: "1px solid #ddd",
-                  background: alreadyDrawn ? "#f5f5f5" : "white",
-                  cursor: alreadyDrawn ? "not-allowed" : "pointer",
-                  fontWeight: 800,
-                }}
-              >
-                {alreadyDrawn ? "今日はもう引きました" : "引く"}
-              </button>
-
-              <button
-                onClick={copyText}
-                disabled={!message}
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: 20,
-                  border: "1px solid #ddd",
-                  background: !message ? "#f5f5f5" : "white",
-                  cursor: !message ? "not-allowed" : "pointer",
-                  fontWeight: 800,
-                }}
-              >
-                コピー
-              </button>
-            </div>
-
-            <p style={{ marginTop: 14, fontSize: 12, opacity: 0.7 }}>
-              ※ 本アプリは娯楽目的です。気楽にどうぞ。
-            </p>
-          </section>
-        )}
-      </main>
-    </div>
+          <p style={styles.note}>※ 本アプリは娯楽目的です。気楽にどうぞ。</p>
+        </div>
+      </section>
+    </main>
   );
 }
+
+/* =======================
+   Styles
+======================= */
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100svh",
+    background: "#f5eaf1",
+  },
+
+  hero: {
+    position: "relative",
+    height: 320,
+    overflow: "hidden",
+  },
+  heroVideo: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "contain", // containだと余白が出てズレやすいのでcover推奨
+    display: "block",
+    zIndex: 0,
+    pointerEvents: "none",
+  },
+  heroGradient: {
+    position: "absolute",
+    inset: 0,
+    // 暗すぎ対策：薄め
+    background: "linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.00))",
+    zIndex: 1,
+    pointerEvents: "none",
+  },
+
+  heroTitleWrap: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingTop: 44,
+    pointerEvents: "none",
+  },
+  heroTitle: {
+    margin: 0,
+    fontSize: 44,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    color: "#ffd7e8",
+    textShadow: "0 2px 12px rgba(0,0,0,0.25)",
+    WebkitTextStroke: "1px rgba(190, 80, 150, 0.55)",
+  },
+
+  heroRowWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 18,
+    zIndex: 2,
+    pointerEvents: "auto",
+  },
+  heroRow: {
+    maxWidth: 960,
+    margin: "0 auto",
+    padding: "0 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  centerLine: {
+    flex: 1,
+    textAlign: "center",
+  },
+  centerLineText: {
+    display: "inline-block",
+    padding: "8px 14px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.45)",
+    backdropFilter: "blur(6px)",
+    color: "#1a1a1a",
+    fontWeight: 700,
+  },
+
+  changeBtn: {
+    width: 120,
+    whiteSpace: "nowrap",
+    borderRadius: 999,
+    border: "1px solid rgba(0,0,0,0.14)",
+    background: "rgba(255,255,255,0.55)",
+    padding: "10px 12px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+
+  resultSection: {
+    // ヘッダーのすぐ下に置きつつ、少しだけ被せる（前の位置感を再現）
+    marginTop: -42,
+    paddingBottom: 18,
+  },
+
+  container: {
+    maxWidth: 960,
+    margin: "0 auto",
+    padding: "0 16px",
+  },
+
+  card: {
+    background: "rgba(255,255,255,0.92)",
+    borderRadius: 18,
+    boxShadow: "0 12px 30px rgba(0,0,0,0.10)",
+    padding: "18px 18px",
+  },
+  cardLabel: {
+    fontSize: 13,
+    color: "rgba(0,0,0,0.55)",
+    marginBottom: 10,
+    fontWeight: 700,
+  },
+  cardText: {
+    fontSize: 22,
+    fontWeight: 800,
+    lineHeight: 1.45,
+    color: "#111",
+    wordBreak: "break-word",
+  },
+
+  actionsSection: {
+    padding: "10px 0 40px",
+  },
+  actionsRow: {
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+  },
+
+  drawBtn: {
+    flex: 1,
+    borderRadius: 999,
+    padding: "16px 16px",
+    border: "1px solid rgba(0,0,0,0.12)",
+    background: "rgba(255,255,255,0.75)",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  drawBtnDisabled: {
+    opacity: 0.6,
+    cursor: "not-allowed",
+  },
+
+  copyBtn: {
+    width: 120,
+    borderRadius: 999,
+    padding: "16px 14px",
+    border: "1px solid rgba(0,0,0,0.12)",
+    background: "rgba(255,255,255,0.75)",
+    fontWeight: 900,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  copyBtnDisabled: {
+    opacity: 0.55,
+    cursor: "not-allowed",
+  },
+
+  note: {
+    marginTop: 14,
+    fontSize: 12,
+    color: "rgba(0,0,0,0.55)",
+  },
+};
