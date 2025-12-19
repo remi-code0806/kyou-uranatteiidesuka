@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+■アプリ名：今日占っていいですか？
 
-## Getting Started
+概要：隙間時間に見られる一言アプリです。
+ユーザーが星座を選択すると、当日分のメッセージを1回だけ引くことができます。
 
-First, run the development server:
+
+対象環境：スマホ・PC・ipad対応のWebアプリ
+フレームワーク：Next.js（App Router）
+言語：TypeScript / React
+データ保存：LocalStorage（ブラウザ内）
+
+主な機能：
+
+・星座選択
+・1日１回のおみくじ表示
+・日付判定による重複防止
+・メッセージのコピー機能(lineにも結果が貼れて友達と共有できる)
+・スマホ・PC・ipadで表示しても崩れないUI設計
+
+
+工夫した点：
+
+・LocalStorageに日付とメッセージを保存し同日に複数回引けないよう制御
+・画面サイズに依存しないレイアウトを意識し、ヘッダーとUI領域を分離
+・public配下で画像を管理し、ビルド時に安全に配信できる構成にした
+・初学者でも理解しやすい状態管理(useState/useEffect)に限定
+
+
+起動方法：(Local)
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで
+https://kyou-uranatteiidesuka.vercel.app/
+もしくは
+http://localhost:3000
+にアクセスしてください。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
