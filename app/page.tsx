@@ -141,6 +141,8 @@ export default function Home() {
           height: "100%",
           objectFit: "contain",
           display: "block",
+          zIndex: 0,
+          pointerEvents: "none"
         }}
       />
     </div>
@@ -148,6 +150,8 @@ export default function Home() {
       {/* 中身UI */}
       <main
         style={{
+          position: "relative", 
+          zIndex: 1,  
           maxWidth: 520,
           margin: "-120px auto 0",
           padding: 20,
