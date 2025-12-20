@@ -42,7 +42,7 @@ export default function Home() {
             inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: "contain",
           }}
         />
 
@@ -69,16 +69,6 @@ export default function Home() {
             gap: 12,
           }}
         >
-          <h1
-            style={{
-              fontSize: 40,
-              color: "#ffd7e8",
-              textShadow: "0 2px 12px rgba(0,0,0,0.25)",
-              margin: 0,
-            }}
-          >
-            今日、占っていいですか？
-          </h1>
 
           {/* 星座選択（一覧） */}
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
